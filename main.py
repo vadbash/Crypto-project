@@ -1,56 +1,67 @@
 import requests
-import json
-from pprint import pprint
+import telebot
+from telebot import types
 
-def get_by_name():
-    #jungle example
+#bot token
+bot = telebot.TeleBot('Your_Tgbot_Token')
     
-    url = "https://min-api.cryptocompare.com/data/pricemultifull?fsyms=BTC,ETH&tsyms=USD,EUR&api_key=1807c4f60d9e13e37eb0e8be99d280395b3f68ac5c31cf98bee8cc3832d364a4"
-    res = requests.get(url)
-    json = res.json()
+#start function
+@bot.message_handler(commands=['start'])
+def welcome(message):
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    btn1 = types.InlineKeyboardButton("Crypto")
+    markup.add(btn1)
+    bot.reply_to(message, "Hello, want to know more about cryptocurrency, click the button Crypto and become knowledgeable", reply_markup=markup)
 
-    for i in json:
-        price_btce = json['RAW']['BTC']['EUR']['PRICE']
-        change24hour_btce = json['RAW']['BTC']['EUR']['CHANGE24HOUR']
-        changeday_btce = json['RAW']['BTC']['EUR']['CHANGEDAY']
-        high24hour_btce = json['RAW']['BTC']['EUR']['HIGH24HOUR']
-        highday_btce = json['RAW']['BTC']['EUR']['HIGHDAY'] 
-        low24hour_btce = json['RAW']['BTC']['EUR']['LOW24HOUR'] 
-        lowday_btce = json['RAW']['BTC']['EUR']['LOWDAY']
-    print("Euro price for BTC:\nprice: {};\nchange24hour: {}\nchangeday: {}\nhigh24hour: {}\nhighday: {}\nlow24hour: {}\nlowday: {}"
-    .format(price_btce, round(change24hour_btce, 2), round(changeday_btce, 2), high24hour_btce, highday_btce, low24hour_btce, lowday_btce))
-    
-    for i in json:
-        price = json['RAW']['BTC']['USD']['PRICE']
-        change24hour = json['RAW']['BTC']['USD']['CHANGE24HOUR']
-        changeday = json['RAW']['BTC']['USD']['CHANGEDAY']
-        high24hour = json['RAW']['BTC']['USD']['HIGH24HOUR']
-        highday = json['RAW']['BTC']['USD']['HIGHDAY'] 
-        low24hour = json['RAW']['BTC']['USD']['LOW24HOUR'] 
-        lowday = json['RAW']['BTC']['USD']['LOWDAY']
-    print("\nUSD price for BTC:\nprice: {};\nchange24hour: {}\nchangeday: {}\nhigh24hour: {}\nhighday: {}\nlow24hour: {}\nlowday: {}"
-    .format(price, round(change24hour, 2), round(changeday, 2), high24hour, highday, low24hour, lowday))
+    #request button
+    @bot.message_handler(regexp="Crypto")
+    def send_welcome(message):
+        msg = bot.send_message(message.chat.id, text="Type crypto in format (BTC)")
+        bot.register_next_step_handler(msg, define)
 
-    for i in json:
-        price = json['RAW']['ETH']['EUR']['PRICE']
-        change24hour = json['RAW']['ETH']['EUR']['CHANGE24HOUR']
-        changeday = json['RAW']['ETH']['EUR']['CHANGEDAY']
-        high24hour = json['RAW']['ETH']['EUR']['HIGH24HOUR']
-        highday = json['RAW']['ETH']['EUR']['HIGHDAY'] 
-        low24hour = json['RAW']['ETH']['EUR']['LOW24HOUR'] 
-        lowday = json['RAW']['ETH']['EUR']['LOWDAY']
-    print("\nEuro price for ETH:\nprice: {};\nchange24hour: {}\nchangeday: {}\nhigh24hour: {}\nhighday: {}\nlow24hour: {}\nlowday: {}"
-    .format(price, round(change24hour, 2), round(changeday, 2), high24hour, highday, low24hour, lowday))
+    #main function
+    def define(message):
+        message_text = str(message.text).upper()
+        #api connection
+        url = "https://min-api.cryptocompare.com/data/pricemultifull?fsyms={}&tsyms=USD,EUR&api_key=Your_Api_key".format(message_text)
+        res = requests.get(url)
+        json = res.json()
+        try:
+            if json['Response'] == "Error":
+                bot.send_message(message.chat.id, text=f"Sorry crypto {message_text} wasn't found, please try other one. Or you can stop searching with command stop")
+                send_welcome(message)
+        except Exception:
+            if message.text == "stop":
+                bot.send_message(message.chat.id, text="You stop searching. If you want to cintinue click the button /Crypto")
+                quit()
+            for i in json:
+                price_euro = json['RAW'][f'{message_text}']['EUR']['PRICE']
+                change24hour_euro = json['RAW'][f'{message_text}']['EUR']['CHANGE24HOUR']
+                changeday_euro = json['RAW'][f'{message_text}']['EUR']['CHANGEDAY']
+                high24hour_euro = json['RAW'][f'{message_text}']['EUR']['HIGH24HOUR']
+                highday_euro = json['RAW'][f'{message_text}']['EUR']['HIGHDAY'] 
+                low24hour_euro = json['RAW'][f'{message_text}']['EUR']['LOW24HOUR'] 
+                lowday_euro = json['RAW'][f'{message_text}']['EUR']['LOWDAY']
+            bot.send_message(message.chat.id, text="Euro price for {}:\nprice: {}\nchange24hour: {}\nchangeday: {}\nhigh24hour: {}\nhighday: {}\nlow24hour: {}\nlowday: {}"
+            .format(message_text, price_euro, round(change24hour_euro, 2), round(changeday_euro, 2), high24hour_euro, highday_euro, low24hour_euro, lowday_euro))
+            for i in json:
+                price_usd = json['RAW'][f'{message_text}']['USD']['PRICE']
+                change24hour_usd = json['RAW'][f'{message_text}']['USD']['CHANGE24HOUR']
+                changeday_usd = json['RAW'][f'{message_text}']['USD']['CHANGEDAY']
+                high24hour_usd = json['RAW'][f'{message_text}']['USD']['HIGH24HOUR']
+                highday_usd = json['RAW'][f'{message_text}']['USD']['HIGHDAY'] 
+                low24hour_usd = json['RAW'][f'{message_text}']['USD']['LOW24HOUR'] 
+                lowday_usd = json['RAW'][f'{message_text}']['USD']['LOWDAY']
+            bot.send_message(message.chat.id, text="USD price for {}:\nprice: {}\nchange24hour: {}\nchangeday: {}\nhigh24hour: {}\nhighday: {}\nlow24hour: {}\nlowday: {}"
+            .format(message_text, price_usd, round(change24hour_usd, 2), round(changeday_usd, 2), high24hour_usd, highday_usd, low24hour_usd, lowday_usd))
+            if change24hour_euro > 1000:
+                bot.send_message(message.chat.id, text="Currently, the price of this cryptocurrency is growing rapidly, a good opportunity to buy")
+            elif change24hour_euro <= 0:
+                bot.send_message(message.chat.id, text="Currently, the price of this cryptocurrency is falling, it is not the best option to buy, look for something else")
+            else:
+                bot.send_message(message.chat.id, text="Currently, the price of this cryptocurrency is growing slowly. You can buy at your own risk")
+            bot.send_message(message.chat.id, text="You can always stop searching with command stop")
+            send_welcome(message)
 
-    for i in json:
-        price = json['RAW']['ETH']['USD']['PRICE']
-        change24hour = json['RAW']['ETH']['USD']['CHANGE24HOUR']
-        changeday = json['RAW']['ETH']['USD']['CHANGEDAY']
-        high24hour = json['RAW']['ETH']['USD']['HIGH24HOUR']
-        highday = json['RAW']['ETH']['USD']['HIGHDAY'] 
-        low24hour = json['RAW']['ETH']['USD']['LOW24HOUR'] 
-        lowday = json['RAW']['ETH']['USD']['LOWDAY']
-    print("\nUSD price for ETH:\nprice: {};\nchange24hour: {}\nchangeday: {}\nhigh24hour: {}\nhighday: {}\nlow24hour: {}\nlowday: {}"
-    .format(price, round(change24hour, 2), round(changeday, 2), high24hour, highday, low24hour, lowday))
+bot.infinity_polling()
 
-get_by_name()
