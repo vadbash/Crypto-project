@@ -1,6 +1,7 @@
 **Clone repository**
 
 https: `https://github.com/vadbash/Crypto-project.git`
+
 ssh: `git@github.com:vadbash/Crypto-project.git`
 
 **Install all requirements**
